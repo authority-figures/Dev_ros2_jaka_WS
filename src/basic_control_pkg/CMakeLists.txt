@@ -55,7 +55,13 @@ add_executable(
   # src/源.cpp
 )
 
-
+add_executable(
+  robot_controller_node
+  src/JakaController.cpp
+  src/ServoController.cpp
+  src/joint_move_node.cpp
+  # src/源.cpp
+)
 
 
 
@@ -63,17 +69,21 @@ add_executable(
 find_library(JAKA_API_LIBRARY NAMES jakaAPI PATHS ${CMAKE_CURRENT_SOURCE_DIR}/lib)
 
 # 链接库
-target_link_libraries(
-  joint_move_node
+target_link_libraries(joint_move_node ${JAKA_API_LIBRARY})
 
-  ${JAKA_API_LIBRARY}
-)
+target_link_libraries(robot_controller_node ${JAKA_API_LIBRARY})
 
 ament_target_dependencies(joint_move_node rclcpp std_msgs sensor_msgs 
   my_custom_msgs
 )
+ament_target_dependencies(robot_controller_node rclcpp std_msgs sensor_msgs 
+  my_custom_msgs
+)
+
+
 install(TARGETS
   joint_move_node
+  robot_controller_node
   # my_custom_msgs
   DESTINATION lib/${PROJECT_NAME}
   )

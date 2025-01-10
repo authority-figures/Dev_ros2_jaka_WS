@@ -58,7 +58,7 @@
 
         {
             "label": "combinedTask", // combine tasks
-            "dependsOn": ["generateVariable", "build activate pkg"], // 依赖任务，按顺序执行
+            "dependsOn": ["generateVariable","build activate pkg" ], // 依赖任务，按顺序执行
             "type": "shell",
             "command": "echo All tasks executed",
             "problemMatcher": []
@@ -66,7 +66,12 @@
           {
             "label": "generateVariable", // 动态生成变量的任务
             "type": "shell",
-            "command": "basename $(dirname $(${fileDirname}))",
+            "command": "bash",
+            "args": [
+                "-c",
+                // "echo 'PKG_NAME'=$(basename $(dirname ${fileDirname})) > ${workspaceFolder}/.vscode/.env-DEV && bash ${workspaceFolder}/.vscode/sync-env.sh"
+                "echo 'PKG_NAME'=$(basename $(dirname ${fileDirname})) > ${workspaceFolder}/.vscode/.env-DEV"
+            ],
             "problemMatcher": []
           },
           {
@@ -79,7 +84,7 @@
         {
             "label": "build activate pkg",
             "type": "shell",
-            "command": "colcon build --packages-up-to <packagename>",
+            "command": "colcon build --packages-up-to ${command:extension.commandvariable.file.fileDirBasename1Up} ",
             "group": {
               "kind": "build",
               "isDefault": true

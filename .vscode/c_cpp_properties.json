@@ -10,7 +10,9 @@
         "/home/lwh/Project/ROS2_project/my_test_workspace/install/learning_interface/include/**",
         "/opt/ros/humble/include/**",
         "/home/lwh/Project/ROS2_project/Jaka_workspace/Dev_ros2_jaka_WS/src/basic_control_pkg/include/**",
+        "/home/lwh/Project/ROS2_project/Jaka_workspace/Dev_ros2_jaka_WS/src/basic_control_pkg/include/",
         "/home/lwh/Project/ROS2_project/Jaka_workspace/Dev_ros2_jaka_WS/src/basic_control_pkg/include/basic_control_pkg/**",
+        "/home/lwh/Project/ROS2_project/Jaka_workspace/Dev_ros2_jaka_WS/src/basic_control_pkg/include/basic_control_pkg/",
         "/home/lwh/Project/ROS2_project/Jaka_workspace/Dev_ros2_jaka_WS/src/my_custom_msgs/include/**",
         "/usr/include/**"
       ],

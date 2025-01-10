@@ -6,16 +6,44 @@
 
 
     "version": "0.2.0",
+    // 定义可重用的变量
+    "inputs": [
+      {
+          "id": "PKG_NAME",           // 变量ID
+          "type": "command",             // 类型为命令
+          "command": "extension.commandvariable.file.content", // 使用插件的文件内容读取命令
+          "args": {
+              "fileName": "${workspaceFolder}/.vscode/.env-DEV", // .env文件路径
+              "key": "PKG_NAME",     // 要读取的变量名
+              "default": "Unknow"     // 默认值（如果变量未找到）
+          }
+      },
+      {
+          "id": "buildType",
+          "type": "command",
+          "command": "extension.commandvariable.file.content",
+          "args": {
+              "fileName": "${workspaceFolder}/.env",
+              "key": "BUILD_TYPE",
+              "default": "debug"
+          }
+      }
+    ],
     "configurations": [
         {
             "name": "(gdb) c++ - 生成和调试活动文件",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/install/${command:generateVariable}/lib/${command:generateVariable}/${fileBasenameNoExtension}",
-            "args": [],
+            "envFile": "${workspaceFolder}/.vscode/launch.env",
+            // "program": "${workspaceFolder}/install/${command:extension.commandvariable.file.fileDirBasename1Up}/lib/${input:PKG_NAME}/${fileBasenameNoExtension}",
+            "program": "${workspaceFolder}/install/${command:extension.commandvariable.file.fileDirBasename1Up}/lib/${command:extension.commandvariable.file.fileDirBasename1Up}/${fileBasenameNoExtension}",
+            
+            "args": ["--env=${env:PKG_NAME}"],
+            
+            
             "stopAtEntry": false,
             "cwd": "${fileDirname}",
-            "environment": [],
+
             "externalConsole": false,
             "MIMode": "gdb",
             "setupCommands": [
@@ -30,7 +58,7 @@
                     "ignoreFailures": true
                 }
             ],
-            "preLaunchTask": "combinedTask"
+            "preLaunchTask": "build activate pkg"
         },
 
         {
