@@ -23,6 +23,7 @@ find_package(std_msgs REQUIRED)
 # find_package(sensor_msgs REQUIRED)
 # find_package(rosidl_default_generators REQUIRED )
 find_package(my_custom_msgs REQUIRED)
+find_package(fmt REQUIRED)
 
 
 # # 生成消息
@@ -59,7 +60,7 @@ add_executable(
   robot_controller_node
   src/JakaController.cpp
   src/ServoController.cpp
-  src/joint_move_node.cpp
+  src/robot_controller_node
   # src/源.cpp
 )
 
@@ -71,13 +72,13 @@ find_library(JAKA_API_LIBRARY NAMES jakaAPI PATHS ${CMAKE_CURRENT_SOURCE_DIR}/li
 # 链接库
 target_link_libraries(joint_move_node ${JAKA_API_LIBRARY})
 
-target_link_libraries(robot_controller_node ${JAKA_API_LIBRARY})
+target_link_libraries(robot_controller_node ${JAKA_API_LIBRARY} fmt)
 
 ament_target_dependencies(joint_move_node rclcpp std_msgs sensor_msgs 
   my_custom_msgs
 )
 ament_target_dependencies(robot_controller_node rclcpp std_msgs sensor_msgs 
-  my_custom_msgs
+  my_custom_msgs fmt
 )
 
 

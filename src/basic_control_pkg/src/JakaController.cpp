@@ -2,8 +2,8 @@
 
 // 构造函数和析构函数
 JakaController::JakaController(const std::string& ip)
-    : ip_(ip), max_joint_speed(180.0/180*M_PI), max_joint_acc(90 / 180 * M_PI), servo_turn(false), get_robot_info_run(false), robot()
-    , servo_controller(nullptr) // 初始化为 nullptr
+    :  robot(), servo_controller(nullptr),ip_(ip), max_joint_speed(180.0/180*M_PI), max_joint_acc(90 / 180 * M_PI), servo_turn(false), get_robot_info_run(false)
+     // 初始化为 nullptr
 {
     // 动态分配 ServoController 对象
     servo_controller = new ServoController(&robot, this);

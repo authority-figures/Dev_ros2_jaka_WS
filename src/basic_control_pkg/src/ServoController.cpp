@@ -13,6 +13,21 @@ errno_t ServoController::servo_enable() {
 }
 
 errno_t ServoController::move_js_extend(const std::vector<JointValue> joints,MoveMode mode = MoveMode::ABS, unsigned int step_num = 1) {
-    for 
-    return 0;
+    for (size_t i = 0; i < joints.size(); ++i) {
+        JointValue joint_pos = joints[i];
+        if (!controller_->validate_joint_values(&joint_pos)) {
+            std::cerr << "move_js_extend failed: joint values out of range!" << std::endl;
+            return ERR_INVALID_PARAMETER;
+        }
+
+        // 调用 joint_move 指令
+        errno_t ret = robot_->servo_j(&joint_pos, mode, step_num);
+        if (ret != ERR_SUCC) {
+            std::cerr << "move_js_extend failed: error code " << ret << std::endl;
+            return ret;
+        }
+
+    }
+    return ERR_SUCC;
+    
 }

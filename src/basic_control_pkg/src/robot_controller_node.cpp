@@ -13,7 +13,7 @@ class RobotControllerNode : public rclcpp::Node {
 public:
     RobotControllerNode()
         : Node("robot_controller_node"),
-          controller_("192.168.2.100"), // 替换为实际IP
+          controller_("10.5.5.100"), // 替换为实际IP
           executing_task_(false),
           servo_enabled_(false) {
 
@@ -34,17 +34,23 @@ public:
         
 
         // 订阅伺服控制话题
-        servo_control_subscription_ = this->create_subscription<std_msgs::msg::String>(
+        servo_control_subscription_ = this->create_subscription<my_custom_msgs::msg::Servoj>(
             "/robot_arm/servo_control", 10,
-            std::bind(&RobotControllerNode::servo_control_callback, this, std::placeholders::_1));
+            std::bind(&RobotControllerNode::servo_control_callback<my_custom_msgs::msg::Servoj>, this, std::placeholders::_1));
 
         // 订阅伺服控制使能话题
         servo_enable_subscription_ = this->create_subscription<std_msgs::msg::String>(
             "/robot_arm/servo_enable", 10,
             std::bind(&RobotControllerNode::servo_enable_callback, this, std::placeholders::_1));
 
+        // 订阅 JointArray 消息
+        servo_control_joint_array_subscription_ = this->create_subscription<my_custom_msgs::msg::JointArray>(
+            "/robot_arm/servo_control_joints", 10,
+            std::bind(&RobotControllerNode::servo_control_callback<my_custom_msgs::msg::JointArray>, this, std::placeholders::_1));
+
+
         // 订阅关节移动话题
-        joint_move_subscription_ = this->create_subscription<sensor_msgs::msg::JointState>(
+        joint_move_subscription_ = this->create_subscription<my_custom_msgs::msg::JointMove>(
             "/robot_arm/joint_move", 10,
             std::bind(&RobotControllerNode::joint_move_callback, this, std::placeholders::_1));
 
@@ -64,10 +70,10 @@ private:
     std::atomic<bool> stop_monitoring_{ false }; // 监控线程停止标志
 
     // 订阅器
-    rclcpp::Subscription<std_msgs::msg::String>::SharedPtr servo_control_subscription_;
+    rclcpp::Subscription<my_custom_msgs::msg::Servoj>::SharedPtr servo_control_subscription_;
     rclcpp::Subscription<std_msgs::msg::String>::SharedPtr servo_enable_subscription_;
-    rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr joint_move_subscription_;
-
+    rclcpp::Subscription<my_custom_msgs::msg::JointMove>::SharedPtr joint_move_subscription_;
+    rclcpp::Subscription<my_custom_msgs::msg::JointArray>::SharedPtr servo_control_joint_array_subscription_;
     // 发布器
     rclcpp::Publisher<my_custom_msgs::msg::RobotStatus>::SharedPtr publisher_; 
 
@@ -95,8 +101,11 @@ private:
         }
     }
 
+
+    // 泛型回调函数，处理两种不同类型的消息
     // 伺服控制回调
-    void servo_control_callback(const my_custom_msgs::msg::Servoj::SharedPtr msg) {
+    template <typename MsgType>
+    void servo_control_callback(const typename MsgType::SharedPtr msg) {
         std::lock_guard<std::mutex> lock(task_mutex_);
         if (!servo_enabled_) {
             RCLCPP_WARN(this->get_logger(), "Servo control request ignored: servo control is not enabled.");
@@ -107,15 +116,57 @@ private:
             return;
         }
         executing_task_ = true;
-        RCLCPP_INFO(this->get_logger(), "Executing servo control. Positions: %s", fmt::format("{}", fmt::join(msg->joint_state.position, ", ")).c_str());
-        JointValue* joint_pos;
-        for (size_t i = 0; i < std::min(msg->joint_state.position.size(), 6ul); ++i) {
-            joint_pos->jVal[i] = msg->joint_state.position[i];
+
+        if constexpr (std::is_same<MsgType, my_custom_msgs::msg::Servoj>::value) {
+            // 处理 Servoj 消息
+            RCLCPP_INFO(this->get_logger(), "Executing servo control (Servoj). Positions: %s",
+                        fmt::format("{}", fmt::join(msg->joint_state.position, ", ")).c_str());
+            JointValue joint_pos;
+            for (size_t i = 0; i < std::min(msg->joint_state.position.size(), 6ul); ++i) {
+                joint_pos.jVal[i] = msg->joint_state.position[i];
+            }
+            // 调用伺服控制指令
+            // controller_.robot.servo_j(&joint_pos, static_cast<MoveMode>(msg->movemode), msg->step_num);
+        } else if constexpr (std::is_same<MsgType, my_custom_msgs::msg::JointArray>::value) {
+            // 处理 JointArray 消息
+            RCLCPP_INFO(this->get_logger(), "Executing servo control (JointArray).");
+            for (const auto& joint_msg : msg->joint_array) {
+                RCLCPP_INFO(this->get_logger(), "Processing joint positions: %s",
+                            fmt::format("{}", fmt::join(joint_msg.position, ", ")).c_str());
+                JointValue joint_pos;
+                for (size_t i = 0; i < std::min(joint_msg.position.size(), 6ul); ++i) {
+                    joint_pos.jVal[i] = joint_msg.position[i];
+                }
+                // 调用伺服控制指令
+                // controller_.robot.servo_j(&joint_pos, static_cast<MoveMode>(joint_msg.movemode), joint_msg.step_num);
+            }
         }
-        // 调用伺服控制指令
-        controller_.robot.servo_j(joint_pos, static_cast<MoveMode>(msg->movemode),msg->step_num);
+
         executing_task_ = false;
     }
+
+
+    // // 伺服控制回调
+    // void servo_control_callback(const my_custom_msgs::msg::Servoj::SharedPtr msg) {
+    //     std::lock_guard<std::mutex> lock(task_mutex_);
+    //     if (!servo_enabled_) {
+    //         RCLCPP_WARN(this->get_logger(), "Servo control request ignored: servo control is not enabled.");
+    //         return;
+    //     }
+    //     if (executing_task_) {
+    //         RCLCPP_WARN(this->get_logger(), "Servo control request ignored: another task is running.");
+    //         return;
+    //     }
+    //     executing_task_ = true;
+    //     RCLCPP_INFO(this->get_logger(), "Executing servo control. Positions: %s", fmt::format("{}", fmt::join(msg->joint_state.position, ", ")).c_str());
+    //     JointValue* joint_pos;
+    //     for (size_t i = 0; i < std::min(msg->joint_state.position.size(), 6ul); ++i) {
+    //         joint_pos->jVal[i] = msg->joint_state.position[i];
+    //     }
+    //     // 调用伺服控制指令
+    //     controller_.robot.servo_j(joint_pos, static_cast<MoveMode>(msg->movemode),msg->step_num);
+    //     executing_task_ = false;
+    // }
 
     // 关节移动回调
     void joint_move_callback(const my_custom_msgs::msg::JointMove::SharedPtr msg) {
@@ -131,8 +182,6 @@ private:
         executing_task_ = true;
         RCLCPP_INFO(this->get_logger(), "Executing joint move.");
 
-        // 创建关节目标位置
-        my_custom_msgs::msg::JointMove* msg;
         
         sensor_msgs::msg::JointState l;
         JointValue joint_pos;
@@ -205,3 +254,12 @@ private:
     }
 
 };
+
+
+int main(int argc, char** argv) {
+    rclcpp::init(argc, argv);
+    auto node = std::make_shared<RobotControllerNode>();
+    rclcpp::spin(node);
+    rclcpp::shutdown();
+    return 0;
+}

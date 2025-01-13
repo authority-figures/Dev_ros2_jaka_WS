@@ -32,6 +32,8 @@ public:
 
     errno_t get_robot_status(RobotStatus* status);
     errno_t get_joint_position(JointValue* joint_position);
+    // 工具函数
+    bool validate_joint_values(const JointValue* joint_pos); 
 
 public:
     JAKAZuRobot robot;
@@ -47,8 +49,7 @@ private:
 
     
 
-    // 工具函数
-    bool validate_joint_values(const JointValue* joint_pos); 
+    
 
 };
 
