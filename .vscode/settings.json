@@ -103,7 +103,8 @@
     "typeindex": "cpp",
     "typeinfo": "cpp",
     "chrono": "cpp",
-    "functional": "cpp"
+    "functional": "cpp",
+    "string": "cpp"
   },
   "PKG_NAME": "Dev_ros2_jaka_WS"
 }

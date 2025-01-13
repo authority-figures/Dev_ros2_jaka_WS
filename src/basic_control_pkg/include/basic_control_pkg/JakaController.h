@@ -12,7 +12,7 @@
 #include <cmath>
 #include <map>
 #include <variant>
-#include "JAKAZuRobot.h" // ¼ÙÉè JAKAZuRobot µÄÍ·ÎÄ¼şÂ·¾¶
+#include "JAKAZuRobot.h" // å‡è®¾ JAKAZuRobot çš„å¤´æ–‡ä»¶è·¯å¾„
 #include "ServoController.h"
 
 
@@ -35,7 +35,7 @@ public:
 
 public:
     JAKAZuRobot robot;
-
+    ServoController* servo_controller; // ä½¿ç”¨æŒ‡é’ˆè€Œä¸æ˜¯é™æ€å¯¹è±¡
 private:
     std::string ip_;
     
@@ -45,9 +45,9 @@ private:
     bool get_robot_info_run;
     std::mutex data_mutex;
 
-    ServoController* servo_controller; // Ê¹ÓÃÖ¸Õë¶ø²»ÊÇ¾²Ì¬¶ÔÏó
+    
 
-    // ¹¤¾ßº¯Êı
+    // å·¥å…·å‡½æ•°
     bool validate_joint_values(const JointValue* joint_pos); 
 
 };

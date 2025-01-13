@@ -1,6 +1,6 @@
 #include "ServoController.h"
 
-// ServoController Àà¹¹Ôìº¯Êý
+// ServoController ç±»æž„é€ å‡½æ•°
 ServoController::ServoController(JAKAZuRobot* robot, JakaController* controller)
     : robot_(robot), controller_(controller)
     //, servo_running(false), standard_step_time(0.008)
@@ -12,7 +12,7 @@ errno_t ServoController::servo_enable() {
     return ret;
 }
 
-errno_t ServoController::move_j_extend() {
-    //if controller_->
+errno_t ServoController::move_js_extend(const std::vector<JointValue> joints,MoveMode mode = MoveMode::ABS, unsigned int step_num = 1) {
+    for 
     return 0;
 }

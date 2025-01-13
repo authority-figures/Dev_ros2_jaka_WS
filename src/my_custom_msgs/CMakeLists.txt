@@ -12,12 +12,18 @@ find_package(rosidl_default_generators REQUIRED)
 
 set(msg_files
   "msg/RobotStatus.msg"
+  "msg/JointMove.msg"
+  "msg/Servoj.msg"
+  "msg/JointArray.msg"
 )
 
 rosidl_generate_interfaces(${PROJECT_NAME}
-  "msg/RobotStatus.msg"
+  ${msg_files}
   DEPENDENCIES std_msgs sensor_msgs
 )
+
+
+
 
 # install(DIRECTORY launch
 #   DESTINATION share/${PROJECT_NAME}

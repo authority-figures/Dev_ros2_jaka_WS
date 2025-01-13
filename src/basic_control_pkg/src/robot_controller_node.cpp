@@ -3,7 +3,11 @@
 #include "std_msgs/msg/string.hpp"
 #include "sensor_msgs/msg/joint_state.hpp"
 #include "JakaController.h"
+#include <fmt/core.h>
+#include <fmt/ranges.h>
 #include "my_custom_msgs/msg/robot_status.hpp"
+#include "my_custom_msgs/msg/joint_move.hpp"
+#include "my_custom_msgs/msg/servoj.hpp"
 
 class RobotControllerNode : public rclcpp::Node {
 public:
@@ -76,6 +80,12 @@ private:
                 return;
             }
             servo_enabled_ = true;
+            errno_t ret = controller_.servo_controller->servo_enable();
+            if (ret == ERR_SUCC) {
+                RCLCPP_INFO(this->get_logger(), "Servo control enabled.");
+            } else {
+                RCLCPP_ERROR(this->get_logger(), "Failed to enable servo control. Error code: %d", ret);
+            }
             RCLCPP_INFO(this->get_logger(), "Servo control enabled.");
         } else if (msg->data == "disable") {
             servo_enabled_ = false;
@@ -86,7 +96,7 @@ private:
     }
 
     // 伺服控制回调
-    void servo_control_callback(const std_msgs::msg::String::SharedPtr msg) {
+    void servo_control_callback(const my_custom_msgs::msg::Servoj::SharedPtr msg) {
         std::lock_guard<std::mutex> lock(task_mutex_);
         if (!servo_enabled_) {
             RCLCPP_WARN(this->get_logger(), "Servo control request ignored: servo control is not enabled.");
@@ -97,14 +107,18 @@ private:
             return;
         }
         executing_task_ = true;
-        RCLCPP_INFO(this->get_logger(), "Executing servo control: %s", msg->data.c_str());
+        RCLCPP_INFO(this->get_logger(), "Executing servo control. Positions: %s", fmt::format("{}", fmt::join(msg->joint_state.position, ", ")).c_str());
+        JointValue* joint_pos;
+        for (size_t i = 0; i < std::min(msg->joint_state.position.size(), 6ul); ++i) {
+            joint_pos->jVal[i] = msg->joint_state.position[i];
+        }
         // 调用伺服控制指令
-        // Example: controller_.servo_control_function(...);
+        controller_.robot.servo_j(joint_pos, static_cast<MoveMode>(msg->movemode),msg->step_num);
         executing_task_ = false;
     }
 
     // 关节移动回调
-    void joint_move_callback(const sensor_msgs::msg::JointState::SharedPtr msg) {
+    void joint_move_callback(const my_custom_msgs::msg::JointMove::SharedPtr msg) {
         std::lock_guard<std::mutex> lock(task_mutex_);
         if (servo_enabled_) {
             RCLCPP_WARN(this->get_logger(), "Joint move request ignored: servo control is enabled.");
@@ -118,19 +132,30 @@ private:
         RCLCPP_INFO(this->get_logger(), "Executing joint move.");
 
         // 创建关节目标位置
+        my_custom_msgs::msg::JointMove* msg;
+        
+        sensor_msgs::msg::JointState l;
         JointValue joint_pos;
-        for (size_t i = 0; i < std::min(msg->position.size(), 6ul); ++i) {
-            joint_pos.jVal[i] = msg->position[i];
+
+        if (msg->joint_state.position.size() >= 6) {
+            RCLCPP_ERROR(this->get_logger(), "Invalid joint command. Expected 6 values.");
+            return;
         }
 
+        for (size_t i = 0; i < std::min(msg->joint_state.position.size(), 6ul); ++i) {
+            joint_pos.jVal[i] = msg->joint_state.position[i];
+        }
+        MoveMode move_mode = static_cast<MoveMode>(msg->movemode);
         // 调用 joint_move 指令
-        if (controller_.joint_move(&joint_pos, MoveMode::ABS, true, 10.0) == 0) {
+        errno_t ret =controller_.joint_move(&joint_pos, move_mode, msg->is_block, msg->speed) == 0;
+        if (ret == ERR_SUCC) {
             RCLCPP_INFO(this->get_logger(), "Joint move executed successfully.");
         } else {
-            RCLCPP_ERROR(this->get_logger(), "Failed to execute joint move.");
+            RCLCPP_ERROR(this->get_logger(), "Failed to execute joint command. Error code: %d", ret);
         }
         executing_task_ = false;
     }
+
 
 
 
